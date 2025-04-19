@@ -1,0 +1,146 @@
+<?php
+
+namespace Model;
+
+class MySQLHandler {
+
+    private $_db_handler;
+    private $_table;
+    private $_primary_key;
+
+    public function __construct($table, $primary_key = "id") {
+        $this->_table = $table;
+        $this->connect();
+        $this->_primary_key = $primary_key;
+    }
+
+    public function connect() {
+        $handler = mysqli_connect(__HOST__, __USER__, __PASS__, __DB__);
+        if ($handler) {
+            $this->_db_handler = $handler;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function disconnect() {
+        if ($this->_db_handler)
+            mysqli_close($this->_db_handler);
+    }
+
+    public function get_data($fields = array(), $start = 0) {
+        $table = $this->_table;
+        if (empty($fields)) {
+            $sql = "SELECT * FROM `$table`";
+        } else {
+            $sql = "SELECT ";
+            foreach ($fields as $f) {
+                $sql .= "`$f`, ";
+            }
+            $sql .= "FROM `$table` ";
+            $sql = str_replace(", FROM", "FROM", $sql);
+        }
+        $sql .= " LIMIT $start," . __RECORDS_PER_PAGE__;
+        return $this->get_results($sql);
+    }
+
+    public function get_record_by_id($id) {
+        $primary_key = $this->_primary_key;
+        $table = $this->_table;
+        $sql = "SELECT * FROM `$table` WHERE `$primary_key` = '$id'";
+        return $this->get_results($sql);
+    }
+
+    private function get_results($sql) {
+        $this->debug($sql);
+        $_handler_results = mysqli_query($this->_db_handler, $sql);
+        $_arr_results = array();
+
+        if ($_handler_results) {
+            while ($row = mysqli_fetch_array($_handler_results, MYSQLI_ASSOC)) {
+                $_arr_results[] = array_change_key_case($row);
+            }
+            $this->disconnect();
+            return $_arr_results;
+        } else {
+            $this->disconnect();
+            return false;
+        }
+    }
+
+    public function save($new_values) {
+        if (is_array($new_values)) {
+            $table = $this->_table;
+            $sql1 = "INSERT INTO `$table` (";
+            $sql2 = " VALUES (";
+            foreach ($new_values as $key => $value) {
+                $sql1 .= "`$key`,";
+                if (is_numeric($value))
+                    $sql2 .= "$value,";
+                else
+                    $sql2 .= "'$value',";
+            }
+            $sql1 = rtrim($sql1, ",") . ")";
+            $sql2 = rtrim($sql2, ",") . ")";
+            $sql = $sql1 . $sql2;
+
+            if (mysqli_query($this->_db_handler, $sql)) {
+                $this->disconnect();
+                return true;
+            } else {
+                $this->disconnect();
+                return false;
+            }
+        }
+    }
+
+    public function search($column, $column_value) {
+        $table = $this->_table;
+        $sql = "SELECT * FROM `$table` WHERE `$column` LIKE '%" . $column_value . "%'";
+        return $this->get_results($sql);
+    }
+
+    public function update($edited_values, $id) {
+        $table = $this->_table;
+        $primary_key = $this->_primary_key;
+        $sql = "UPDATE `$table` SET ";
+        foreach ($edited_values as $key => $value) {
+            if ($key != $primary_key) {
+                if (!is_numeric($value))
+                    $sql .= "`$key` = '$value', ";
+                else
+                    $sql .= "`$key` = $value, ";
+            }
+        }
+        $sql = rtrim($sql, ", ");
+        $sql .= " WHERE `$primary_key` = $id";
+
+        if (mysqli_query($this->_db_handler, $sql)) {
+            $this->disconnect();
+            return true;
+        } else {
+            $this->disconnect();
+            return false;
+        }
+    }
+
+    public function delete($id) {
+        $table = $this->_table;
+        $primary_key = $this->_primary_key;
+        $sql = "DELETE FROM `$table` WHERE `$primary_key` = $id";
+        $this->debug($sql);
+        if (mysqli_query($this->_db_handler, $sql)) {
+            $this->disconnect();
+            return true;
+        } else {
+            $this->disconnect();
+            return false;
+        }
+    }
+
+    private function debug($sql) {
+        if (__Debug__Mode__ === 1)
+            echo "<h5>Sent Query: </h5>" . $sql . "<br/><br/>";
+    }
+}

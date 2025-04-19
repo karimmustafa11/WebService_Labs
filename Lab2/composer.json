@@ -1,0 +1,15 @@
+{
+    "name": "blu-ray/lab2",
+    "autoload": {
+        "psr-4": {
+            "Model\\": "src/Model/"
+        }
+    },
+    "authors": [
+        {
+            "name": "karimmustafa",
+            "email": "karimmustafa495@gmail.com"
+        }
+    ],
+    "require": {}
+}
