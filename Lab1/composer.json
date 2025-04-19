@@ -1,0 +1,17 @@
+{
+    "name": "blu-ray/lab1",
+    "autoload": {
+        "psr-4": {
+            "BluRay\\Lab1\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "karimmustafa",
+            "email": "karimmustafa495@gmail.com"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.9"
+    }
+}
